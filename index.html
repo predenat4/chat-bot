@@ -3,90 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Scientifique Orange</title>
+    <title>Chatbot Science Expert</title>
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        body { margin: 0; background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Design Orange & Noir */
-        .header { padding: 15px; background: linear-gradient(to right, #ff4500, #ffcc00); color: #000; text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        /* Header Orange */
+        .header { padding: 15px; background: linear-gradient(90deg, #ff4500, #ff8c00); color: #000; text-align: center; font-weight: 800; letter-spacing: 1px; box-shadow: 0 4px 20px rgba(255, 69, 0, 0.4); z-index: 10; }
         
-        #chatBox { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        #chatBox { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; background: radial-gradient(circle at center, #111 0%, #000 100%); }
 
-        /* Animation POP-IN REBOND */
+        /* Animation Pop-in Rebond */
         @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.5) rotate(-5deg); }
-            70% { transform: scale(1.1) rotate(2deg); }
-            100% { opacity: 1; transform: scale(1) rotate(0); }
+            0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        .msg { max-width: 80%; padding: 14px; border-radius: 15px; animation: popIn 0.5s cubic-bezier(0.26, 1.36, 0.4, 1.2) forwards; position: relative; }
+        .msg { max-width: 85%; padding: 15px; border-radius: 20px; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; line-height: 1.5; font-size: 0.95rem; }
         
-        .bot { align-self: flex-start; background: linear-gradient(135deg, #ff8c00, #ffe0b2); color: #000; border-left: 5px solid #fff; }
-        .user { align-self: flex-end; background: #1a1a1a; color: #ff8c00; border: 1px solid #ff8c00; }
+        .bot { align-self: flex-start; background: linear-gradient(135deg, #ff8c00, #ffcc80); color: #000; border-bottom-left-radius: 2px; box-shadow: 0 5px 15px rgba(255, 140, 0, 0.2); }
+        .user { align-self: flex-end; background: #222; color: #ff8c00; border: 1px solid #ff8c00; border-bottom-right-radius: 2px; }
 
-        .input-container { padding: 20px; background: #080808; display: flex; border-top: 2px solid #ff8c00; }
-        input { flex: 1; background: #111; border: 1px solid #333; color: white; padding: 15px; border-radius: 30px; outline: none; transition: 0.3s; }
-        input:focus { border-color: #ff8c00; box-shadow: 0 0 10px rgba(255, 140, 0, 0.5); }
-        button { background: #ff8c00; border: none; padding: 0 25px; margin-left: 10px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { transform: scale(1.05); background: #ff4500; }
+        /* Zone de saisie */
+        .input-container { padding: 20px; background: #0a0a0a; display: flex; gap: 10px; border-top: 1px solid #333; }
+        input { flex: 1; background: #1a1a1a; border: 1px solid #444; color: white; padding: 12px 20px; border-radius: 30px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #ff8c00; }
+        button { background: #ff8c00; border: none; padding: 0 25px; border-radius: 30px; font-weight: bold; cursor: pointer; color: #000; transition: 0.2s; }
+        button:hover { background: #ff4500; transform: scale(1.05); }
+
+        /* Indicateur de chargement */
+        .loading { font-style: italic; font-size: 0.8rem; color: #ff8c00; margin-bottom: 5px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="header">Assistant Science Pro</div>
+<div class="header">SCIENCE EXPLORER IA</div>
 <div id="chatBox">
-    <div class="msg bot">Posez-moi n'importe quelle question sur la physique, la chimie ou les maths !</div>
+    <div class="msg bot">Je suis connecté à Wikipédia. Posez-moi une question sur les maths, la physique ou la chimie (ex: "C'est quoi un atome ?")</div>
 </div>
 
+<div id="loading" class="loading" style="padding-left: 20px;">L'IA recherche dans la base de données...</div>
+
 <div class="input-container">
-    <input type="text" id="userInput" placeholder="Ex: C'est quoi la loi d'Ohm ?" onkeypress="if(event.key==='Enter') send()">
-    <button onclick="send()">DEMANDER</button>
+    <input type="text" id="userInput" placeholder="Votre question scientifique..." onkeypress="if(event.key==='Enter') askWiki()">
+    <button onclick="askWiki()">EXPLORER</button>
 </div>
 
 <script>
-    // LOGIQUE DE RECONNAISSANCE SCIENTIFIQUE
-    // On définit des "Thèmes" qui couvrent des milliers de questions possibles
-    const scienceDB = {
-        physique: {
-            keywords: ["ohm", "electricite", "tension", "courant", "newton", "gravite", "vitesse", "energie", "atome", "relativite", "einstein", "force"],
-            response: "En physique, ce concept est lié aux lois fondamentales de la matière et de l'énergie. (Ex: F=ma pour Newton ou U=RI pour Ohm)."
-        },
-        chimie: {
-            keywords: ["mole", "tableau periodique", "element", "molecule", "reaction", "acide", "base", "ph", "liaison", "gaz", "liquide", "solide"],
-            response: "En chimie, cela concerne la structure de la matière et ses transformations moléculaires."
-        },
-        maths: {
-            keywords: ["pythagore", "thales", "equation", "derivee", "integrale", "geometrie", "nombre", "pi", "cercle", "triangle", "cosinus", "sinus"],
-            response: "C'est une question de mathématiques ! On utilise ici le raisonnement logique et le calcul pour résoudre le problème."
-        }
-    };
+    async function askWiki() {
+        const input = document.getElementById("userInput");
+        const chat = document.getElementById("chatBox");
+        const loader = document.getElementById("loading");
+        const query = input.value.trim();
 
-    function send() {
-        let input = document.getElementById("userInput");
-        let chat = document.getElementById("chatBox");
-        if (!input.value.trim()) return;
+        if (!query) return;
 
-        // Message User
-        chat.innerHTML += `<div class="msg user">${input.value}</div>`;
-        let text = input.value.toLowerCase();
+        // Afficher message utilisateur
+        chat.innerHTML += `<div class="msg user">${query}</div>`;
         input.value = "";
+        chat.scrollTop = chat.scrollHeight;
 
-        // Réflexion du bot
-        setTimeout(() => {
-            let reply = "Désolé, je ne connais pas encore ce concept précis. Mais je peux répondre sur la physique, la chimie et les maths !";
-            
-            // Logique de scan
-            for (let theme in scienceDB) {
-                if (scienceDB[theme].keywords.some(k => text.includes(k))) {
-                    reply = `[${theme.toUpperCase()}] : ${scienceDB[theme].response}`;
-                    break;
-                }
+        // Afficher loader
+        loader.style.display = "block";
+
+        try {
+            // Appel à l'API Wikipédia (Recherche du résumé de l'article le plus proche)
+            const url = `https://fr.wikipedia.org{encodeURIComponent(query)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            loader.style.display = "none";
+
+            let reply = "";
+            if (data.extract) {
+                reply = `<b>${data.title}</b> : ${data.extract}`;
+            } else {
+                reply = "Désolé, je n'ai pas trouvé d'article précis. Essayez d'être plus spécifique (ex: 'Relativité générale' au lieu de 'Einstein').";
             }
 
+            // Afficher réponse du bot
             chat.innerHTML += `<div class="msg bot">${reply}</div>`;
-            chat.scrollTop = chat.scrollHeight;
-        }, 700);
+        } catch (error) {
+            loader.style.display = "none";
+            chat.innerHTML += `<div class="msg bot">Erreur de connexion au savoir mondial. Vérifiez votre internet.</div>`;
+        }
+        
+        chat.scrollTop = chat.scrollHeight;
     }
 </script>
+
 </body>
 </html>
